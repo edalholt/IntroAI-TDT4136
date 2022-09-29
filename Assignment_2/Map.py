@@ -231,6 +231,8 @@ class Map_Obj():
             str_value = ' ; '
         elif value == 5:
             str_value = ' G '
+        elif value == 6:
+            str_value = ' S '
         else:
             str_value = str(value)
         self.int_map[pos[0]][pos[1]] = value

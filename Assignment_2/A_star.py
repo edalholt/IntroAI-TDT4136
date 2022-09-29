@@ -18,6 +18,7 @@ class Node():
         self.total = self.cost + self.heur
         
         
+        
 
     def heuristic(self, goal):
         # absolute value of current x minus goal x, plus current y minus goal y
@@ -81,15 +82,15 @@ class A_star():
             self.find_inherit()
             self.sort_activeList()
             self.next_node(self.current)
-            
             self.current = self.activeList[0]
-            #map_obj.replace_map_values(self.current.pos, 4, map_obj.get_end_goal_pos())
+            map_obj.replace_map_values(self.current.pos, 6, map_obj.get_end_goal_pos())
                
     def draw_shortest_path(self):
         steps = 0
         while self.current.pos != map_obj.get_start_pos():
-            map_obj.replace_map_values(self.current.pos, 6, map_obj.get_start_pos())
+            map_obj.replace_map_values(self.current.pos, 7, map_obj.get_start_pos())
             self.current = self.current.parent
+            
             steps+=1
         map_obj.replace_map_values(map_obj.get_goal_pos(), 5, map_obj.get_start_pos())
         print(steps, "steps taken")
