@@ -12,6 +12,7 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
+from numpy import Infinity
 from util import manhattanDistance
 from game import Directions
 import random, util
@@ -101,7 +102,7 @@ class MultiAgentSearchAgent(Agent):
     is another abstract class.
     """
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
+    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '1'):
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
@@ -110,6 +111,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
     Your minimax agent (question 2)
     """
+    # Testing if the game is over
+    def terminalTest(self, gameState, depth):
+        return gameState.isLose() or gameState.isWin() or depth == self.depth
 
     def getAction(self, gameState):
         """
@@ -135,7 +139,49 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        ghostCount = gameState.getNumAgents()-1
+        def minMax(state, depth, ghostIndex, pacTurn):
+            # Checking if it is pacmans turn or not
+            # Finding best moves for ghosts
+            if (not pacTurn):
+                minValue = Infinity
+                if self.terminalTest(state, depth):
+                    return self.evaluationFunction(state)
+                # Iterating over all legal actions for a ghost
+                for action in state.getLegalActions(ghostIndex):
+                    stateSucc = state.generateSuccessor(ghostIndex, action)
+                    if ghostIndex == ghostCount:
+                        # Pacman's turn to make a move
+                        minValue = min(minValue, minMax(stateSucc, depth, 1, True))
+                    else:
+                        # Next ghost's turn to make a move
+                        minValue = min(minValue, minMax(stateSucc, depth, ghostIndex+1, False))
+                return minValue
+            else:
+                maxValue = -Infinity
+                if self.terminalTest(state, depth+1):
+                    return self.evaluationFunction(state)
+                # Iterating over all legal moves for Pacman
+                for action in state.getLegalActions(0):
+                    sateSucc = state.generateSuccessor(0, action)
+                    # Go to ghost after pacman
+                    maxValue = max(maxValue, minMax(sateSucc, depth+1, 1, False))
+                return maxValue
+
+        maxEval = -Infinity
+        legalActions = gameState.getLegalActions(0)
+        output = ''
+        # Check all legal actions
+        for action in legalActions:
+            next = gameState.generateSuccessor(0, action)
+            nextValue = minMax(next, 0, 1, False)
+
+            # Evaluate the best move from all legal actions
+            # Returns: Best action
+            if nextValue > maxEval:
+                output = action
+                maxEval = nextValue
+        return output
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
