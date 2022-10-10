@@ -187,13 +187,80 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
     """
+    def terminalTest(self, gameState, depth):
+        return gameState.isLose() or gameState.isWin() or depth == self.depth
 
     def getAction(self, gameState):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        ghostCount = gameState.getNumAgents()-1
+        def minMax(state, depth, ghostIndex, pacTurn, alpha, beta):
+            # Checking if it is pacmans turn or not
+            # Finding best moves for ghosts
+            if (not pacTurn):
+                minValue = Infinity
+                if self.terminalTest(state, depth):
+                    return self.evaluationFunction(state)
+                # Iterating over all legal actions for a ghost
+                for action in state.getLegalActions(ghostIndex):
+                    stateSucc = state.generateSuccessor(ghostIndex, action)
+                    if ghostIndex == ghostCount:
+                        # Pacman's turn to make a move
+                        value = minMax(stateSucc, depth, 1, True, alpha, beta)
+                        minValue = min(minValue, value)
+                        beta = min(beta, value)
+                        if (beta <= alpha):
+                            break
+                        # Pruning?
+                    else:
+                        # Next ghost's turn to make a move
+                        val = minMax(stateSucc, depth, ghostIndex+1, False, alpha, beta)
+                        minValue = min(minValue, val)
+                        beta = min(beta, val)
+                        if (beta <= alpha):
+                            break
+                        # Pruning ?
+                return minValue
+            else:
+                maxValue = -Infinity
+                if self.terminalTest(state, depth+1):
+                    return self.evaluationFunction(state)
+                # Iterating over all legal moves for Pacman
+                for action in state.getLegalActions(0):
+                    sateSucc = state.generateSuccessor(0, action)
+                    # Go to ghost after pacman
+                    val = minMax(sateSucc, depth+1, 1, False, alpha, beta)
+                    maxValue = max(maxValue, val)
+                    alpha = max(alpha, val)
+                    if (beta <= alpha):
+                        break
+                        
+                    # Pruning?
+                return maxValue
+                
+        maxEval = -Infinity
+        alpha = -Infinity
+        beta = Infinity
+        legalActions = gameState.getLegalActions(0)
+        output = ''
+        # Check all legal actions
+        for action in legalActions:
+            next = gameState.generateSuccessor(0, action)
+            nextValue = minMax(next, 0, 1, False, alpha, beta)
+            # Pruning?
+            beta = min(beta, nextValue)
+            if (beta <= alpha):
+                break
+
+            # Evaluate the best move from all legal actions
+            # Returns: Best action
+            if nextValue > maxEval:
+                output = action
+                maxEval = nextValue
+
+        return output
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
