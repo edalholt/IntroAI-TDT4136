@@ -113,7 +113,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
     # Testing if the game is over
     def terminalTest(self, gameState, depth):
-        return gameState.isLose() or gameState.isWin() or depth == self.depth
+        return gameState.isLose() or gameState.isWin() or depth == 0
 
     def getAction(self, gameState):
         """
@@ -139,61 +139,129 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        ghostCount = gameState.getNumAgents()-1
-        def minMax(state, depth, ghostIndex, pacTurn):
-            # Checking if it is pacmans turn or not
-            # Finding best moves for ghosts
-            if (not pacTurn):
-                minValue = Infinity
-                if self.terminalTest(state, depth):
-                    return self.evaluationFunction(state)
-                # Iterating over all legal actions for a ghost
-                for action in state.getLegalActions(ghostIndex):
-                    stateSucc = state.generateSuccessor(ghostIndex, action)
-                    if ghostIndex == ghostCount:
-                        # Pacman's turn to make a move
-                        minValue = min(minValue, minMax(stateSucc, depth, 1, True))
-                    else:
-                        # Next ghost's turn to make a move
-                        minValue = min(minValue, minMax(stateSucc, depth, ghostIndex+1, False))
-                return minValue
+        def minMax(gameState, depth, ghost, pacTurn):
+            currentAction = None
+            # getting the amount of ghosts in the game
+            ghostCount = gameState.getNumAgents() -1
+
+            # checking if it is pacman's turn to make a move, or the ghost's
+            if not pacTurn:
+                # Running the minValue function 
+                minEval = +Infinity
+                currentAction = None
+                # Testing if the game is over
+                if (self.terminalTest(gameState, depth+1)):
+                    return self.evaluationFunction(gameState), None
+                # Iterating over all legal actions for the specific ghost
+                for action in gameState.getLegalActions(ghost):
+                    if (ghost == ghostCount):
+                        # If both ghosts has had their turn, it's pacman's turn to make a move
+                        # Thats why we pass in True
+                        eval, nextAction = minMax(gameState.generateSuccessor(ghost, action), depth, 1, True)
+                    else: 
+                        # 1/x ghosts has made a move, ghost+1 allows the next ghost to make a move
+                        eval, nextAction = minMax(gameState.generateSuccessor(ghost, action), depth, ghost+1, False)
+
+                    if minEval > eval: 
+                        # if the new obtained value is better than the previous, we use this action rather than the previous because the value is better
+                        minEval = eval
+                        currentAction = action
+                return minEval, currentAction
+                
             else:
-                maxValue = -Infinity
-                if self.terminalTest(state, depth+1):
-                    return self.evaluationFunction(state)
-                # Iterating over all legal moves for Pacman
-                for action in state.getLegalActions(0):
-                    sateSucc = state.generateSuccessor(0, action)
-                    # Go to ghost after pacman
-                    maxValue = max(maxValue, minMax(sateSucc, depth+1, 1, False))
-                return maxValue
+                # Pacmans turn to make a move
+                maxEval = -Infinity
+                currentAction = None
+                # Testing if the game is over
+                if (self.terminalTest(gameState, depth)):
+                    return self.evaluationFunction(gameState), None
+                for action in gameState.getLegalActions(0):
+                    # Iterating through all legal actions for pacman
+                    eval, nextAction = minMax(gameState.generateSuccessor(0, action), depth-1, ghost, False)
+                    if maxEval < eval: 
+                        # if the new obtained value is better than the previous, we use this action rather than the previous because the value is better
+                        maxEval = eval
+                        currentAction = action
+                return maxEval, currentAction
+        
 
-        maxEval = -Infinity
-        legalActions = gameState.getLegalActions(0)
-        output = ''
-        # Check all legal actions
-        for action in legalActions:
-            next = gameState.generateSuccessor(0, action)
-            nextValue = minMax(next, 0, 1, False)
-
-            # Evaluate the best move from all legal actions
-            # Returns: Best action
-            if nextValue > maxEval:
-                output = action
-                maxEval = nextValue
-        return output
+        
+        value, action = minMax(gameState, self.depth, 1, True)
+        return action
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
     """
+    def terminalTest(self, gameState, depth):
+        return gameState.isLose() or gameState.isWin() or depth == 0
 
-    def getAction(self, gameState):
+
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+    def getAction(self, gameState):
+        
+        def minMax(gameState, depth, ghost, alpha, beta, pacTurn):
+            currentAction = None
+             # getting the amount of ghosts in the game
+            ghostCount = gameState.getNumAgents() -1
+
+            # checking if it is pacman's turn to make a move, or the ghosts
+            if not pacTurn: 
+                minEval = +Infinity
+                currentAction = None
+                # Testing if the game is over
+                if (self.terminalTest(gameState, depth+1)):
+                    return self.evaluationFunction(gameState), None
+
+                # Iterating over all legal actions for the specific ghost
+                for action in gameState.getLegalActions(ghost):
+                    if (ghost == ghostCount):
+                        # If both ghosts has had their turn, it's pacman's turn to make a move
+                        # Thats why we pass in True
+                        eval, nextAction = minMax(gameState.generateSuccessor(ghost, action), depth, 1, alpha, beta, True)
+                    else: 
+                        # 1/x ghosts has made a move, ghost+1 allows the next ghost to make a move
+                        eval, nextAction = minMax(gameState.generateSuccessor(ghost, action), depth, ghost+1, alpha, beta, False)
+                    if minEval > eval:
+                        # if the new obtained value is better than the previous, we use this action rather than the previous because the value is better 
+                        minEval = eval
+                        currentAction = action
+                    
+                    beta = min(beta, minEval)
+                    # If beta is less than alpha, we not need to take it into account because we will never expand for this action.
+                    if beta < alpha: 
+                        return minEval, currentAction
+                return minEval, currentAction
+                
+            else:
+                # Pacmans turn to make a move
+                maxEval = -Infinity
+                currentAction = None
+                # Testing if the game is over
+                if (self.terminalTest(gameState, depth)):
+                    return self.evaluationFunction(gameState), None
+
+                # Iterating through all legal actions for pacman
+                for action in gameState.getLegalActions(0):
+                    eval, nextAction = minMax(gameState.generateSuccessor(0, action), depth-1, ghost, alpha, beta, False)
+                    if maxEval < eval: 
+                        maxEval = eval
+                        currentAction = action
+                    alpha = max(maxEval, alpha)
+                    # if the new obtained value is better than the previous, we use this action rather than the previous because the value is better
+                    if alpha > beta: 
+                        return maxEval, currentAction
+                return maxEval, currentAction
+        
+
+        
+        value, action = minMax(gameState, self.depth, 1, -Infinity, Infinity, True)
+        return action
+
+    
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
